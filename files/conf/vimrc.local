@@ -1,0 +1,230 @@
+if v:lang =~ "utf8$" || v:lang =~ "UTF-8$"
+    set fileencodings=utf-8,latin1
+endif
+
+if v:version >= 700
+    "The following are a bit slow
+    "for me to enable by default
+    "set cursorline   "highlight current line
+    "set cursorcolumn "highlight current column
+endif
+
+"don't be backwards compatible with silly vi options
+set nocompatible
+
+"allow backspacing over everything in insert mode
+set bs=2
+set viminfo='20,\"50    " read/write a .viminfo file, don't store more
+                        " than 50 lines of registers
+set history=50          " keep 50 lines of command line history
+
+"Always show cursor position
+set ruler
+
+if has("autocmd")
+  " When editing a file, always jump to the last cursor position
+  autocmd BufReadPost *
+  \ if line("'\"") > 0 && line ("'\"") <= line("$") |
+  \   exe "normal g'\"" |
+  \ endif
+endif
+
+"This is necessary to allow pasting from outside vim. It turns off auto stuff.
+"You can tell you are in paste mode when the ruler is not visible
+set pastetoggle=<F2>
+
+"Usually annoys me
+set nowrap
+
+"Usually I don't care about case when searching
+set ignorecase
+
+"Only ignore case when we type lower case when searching
+set smartcase
+
+"I hate noise
+set visualbell
+
+"Show menu with possible completions
+set wildmenu
+
+"Ignore these files when completing names and in Explorer
+set wildignore=.svn,CVS,*.o,*.a,*.class,*.mo,*.la,*.so,*.obj,*.swp,*.jpg,*.png,*.xpm,*.gif
+
+
+""""""""""""""""""""""""""""""""""""""""""""""""
+" Dark background
+""""""""""""""""""""""""""""""""""""""""""""""""
+
+"I always work on dark terminals
+set background=dark
+
+"Make the completion menus readable
+highlight Pmenu ctermfg=0 ctermbg=3
+highlight PmenuSel ctermfg=0 ctermbg=7
+
+"The following should be done automatically for the default colour scheme
+"at least, but it is not in Vim 7.0.17 at least.
+if &bg == "dark"
+  highlight MatchParen ctermbg=darkblue guibg=blue
+endif
+
+""""""""""""""""""""""""""""""""""""""""""""""""
+" Syntax highlighting
+""""""""""""""""""""""""""""""""""""""""""""""""
+
+"Syntax highlighting if appropriate
+if &t_Co > 2 || has("gui_running")
+    syntax on
+    set hlsearch
+    set incsearch "For fast terminals can highlight search string as you type
+endif
+
+if &diff
+    "I'm only interested in diff colours
+    syntax off
+endif
+
+"syntax highlight shell scripts as per POSIX
+"not the original Bourne shell which very few use
+let g:is_posix = 1
+
+"flag problematic whitespace (trailing and spaces before tabs)
+"Note you get the same by doing let c_space_errors=1 but
+"this rule really applys to everything.
+highlight RedundantSpaces term=standout ctermbg=red guibg=red
+match RedundantSpaces /\s\+$\| \+\ze\t/ "\ze sets end of match so only spaces highlighted
+"use :set list! to toggle visible whitespace on/off
+set listchars=tab:>-,trail:.,extends:>
+
+""""""""""""""""""""""""""""""""""""""""""""""""
+" Key bindings
+""""""""""""""""""""""""""""""""""""""""""""""""
+
+"allow deleting selection without updating the clipboard (yank buffer)
+vnoremap x "_x
+vnoremap X "_X
+
+"<home> toggles between start of line and start of text
+imap <khome> <home>
+nmap <khome> <home>
+inoremap <silent> <home> <C-O>:call Home()<CR>
+nnoremap <silent> <home> :call Home()<CR>
+function Home()
+    let curcol = wincol()
+    normal ^
+    let newcol = wincol()
+    if newcol == curcol
+        normal 0
+    endif
+endfunction
+
+"<end> goes to end of screen before end of line
+imap <kend> <end>
+nmap <kend> <end>
+inoremap <silent> <end> <C-O>:call End()<CR>
+nnoremap <silent> <end> :call End()<CR>
+function End()
+    let curcol = wincol()
+    normal g$
+    let newcol = wincol()
+    if newcol == curcol
+        normal $
+    endif
+    "The following is to work around issue for insert mode only.
+    "normal g$ doesn't go to pos after last char when appropriate.
+    "More details and patch here:
+    "http://www.pixelbeat.org/patches/vim-7.0023-eol.diff
+    if virtcol(".") == virtcol("$") - 1
+        normal $
+    endif
+endfunction
+
+"Ctrl-{up,down} to scroll.
+"The following only works in gvim?
+"Also vim doesn't have default C-{home,end} bindings?
+if has("gui_running")
+    nmap <C-up> <C-y>
+    imap <C-up> <C-o><C-y>
+    nmap <C-down> <C-e>
+    imap <C-down> <C-o><C-e>
+endif
+
+""""""""""""""""""""""""""""""""""""""""""""""""
+" Indenting
+""""""""""""""""""""""""""""""""""""""""""""""""
+
+set autoindent
+set smartindent
+
+"The rest deal with whitespace handling and
+"mainly make sure hardtabs are never entered
+"as their interpretation is too non standard in my experience
+set softtabstop=4
+" Note if you don't set expandtab, vi will automatically merge
+" runs of more than tabstop spaces into hardtabs. Clever but
+" not what I usually want.
+set expandtab
+set shiftwidth=4
+set tabstop=4
+set shiftround
+set nojoinspaces
+set smarttab
+
+""""""""""""""""""""""""""""""""""""""""""""""""
+" Pathogen and Bundles directives
+""""""""""""""""""""""""""""""""""""""""""""""""
+
+" 8/11/2012 lorello: pathogen setup
+call pathogen#infect()
+filetype plugin indent on
+
+" Syntastic statusline add
+set statusline+=%#warningmsg#
+set statusline+=%{SyntasticStatuslineFlag()}
+set statusline+=%*
+
+let g:syntastic_stl_format = 'Syntastic: %E{#%e err: da riga %fe}%B{, }%W{#%w warn: da riga %fw}'
+let g:syntastic_check_on_open=1
+let g:syntastic_auto_jump=1
+let g:syntastic_auto_loc_list=1
+
+""""""""""""""""""""""""""""""""""""""""""""""""
+" Filetype specific directives
+""""""""""""""""""""""""""""""""""""""""""""""""
+
+" 1/6/09 lorello: Rimuove gli spazi alla fine della riga quando si apre
+" un file php
+autocmd BufEnter *.php :%s/\s\+$//e
+" Rimuove gli antipatici ^M all'apertura del file
+autocmd BufEnter *.php :%s/[ \t\r]\+$//e
+
+" 21/10/2011 lorello: gestione sintassi Varnish
+au BufRead,BufNewFile *.vcl :set ft=vcl
+autocmd FileType vcl match ErrorMsg /\%>78v.\+/
+
+
+" 3/9/08
+" Usa 4 spazi per i file Python
+autocmd FileType python set tabstop=4
+autocmd FileType python set shiftwidth=4
+autocmd FileType python set softtabstop=4 
+
+" Usa 2 spazi per i file YAML
+autocmd FileType yaml set tabstop=2
+autocmd FileType yaml set shiftwidth=2
+autocmd FileType yaml set softtabstop=2
+
+" Usa 2 spazi per i file Puppet 
+autocmd FileType puppet set tabstop=2
+autocmd FileType puppet set shiftwidth=2
+autocmd FileType puppet set softtabstop=2
+" Rimuove spazi in eccesso nei file pp
+autocmd BufEnter *.pp :%s/\s\+$//e
+
+" Usa 2 spazi per i file di Nginx 
+autocmd FileType nginx set tabstop=2
+autocmd FileType nginx set shiftwidth=2
+autocmd FileType nginx set softtabstop=2
+"
+
