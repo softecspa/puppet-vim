@@ -7,11 +7,21 @@
 #   with a git clone from the official repo
 class vim
 {
+
+  $package_name = $::lsbdistcodename? {
+    'hardy' => 'vim-full',
+    default => 'vim'
+  }
+
+  $vim_version = $::lsbdistcodename? {
+    'hardy'   => 'vim71',
+    'lucid'   => 'vim72',
+    'precise' => 'vim73',
+    'trusty'  => 'vim74',
+  }
+
   package { 'vim':
-    name    => $::lsbdistcodename ? {
-      "hardy" => "vim-full",
-      default => "vim",
-    },
+    name    => $package_name,
     ensure  => installed,
   }
 
@@ -34,14 +44,21 @@ class vim
   file { '/root/.vimrc':  ensure  => absent }
   file { '/root/.vim':    ensure  => absent, recurse => true, force => true }
 
+  #crea il link vimcurrent se non esiste
+
+  file {'/usr/share/vim/vimcurrent':
+    ensure  => link,
+    target  => "/usr/share/vim/${vim_version}"
+  } ->
+
   file { '/usr/share/vim/vimcurrent/syntax/puppet.vim':
     source  => 'puppet:///modules/vim/syntax/puppet.vim',
-  }
-  
+  } ->
+
   file { '/usr/share/vim/vimcurrent/syntax/wiki.vim':
     source  => 'puppet:///modules/vim/syntax/wiki.vim',
-  }
-  
+  } ->
+
   file { '/usr/share/vim/vimcurrent/syntax/vcl.vim':
     source  => 'puppet:///modules/vim/syntax/vcl.vim',
   }
