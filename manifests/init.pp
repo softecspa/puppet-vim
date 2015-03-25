@@ -17,6 +17,7 @@ class vim
     'hardy'   => 'vim71',
     'lucid'   => 'vim72',
     'precise' => 'vim73',
+    'wheezy'  => 'vim73',
     'trusty'  => 'vim74',
   }
 
